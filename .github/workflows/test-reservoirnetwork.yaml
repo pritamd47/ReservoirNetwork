@@ -18,6 +18,16 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Cache conda
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if etc/example-environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('etc/example-environment.yml') }}
       - name: Setup Mambaforge
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -30,7 +40,9 @@ jobs:
         run: mamba env update --prefix ./.condaenv -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Add src to environment
+        shell: bash -l {0}
         run: |
+          conda init bash
           conda activate ./.condaenv
           conda develop src/
 
