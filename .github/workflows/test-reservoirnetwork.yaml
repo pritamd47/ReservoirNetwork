@@ -1,6 +1,6 @@
 name: test-reservoirnetwork
 
-on: [push]
+on: [push, pull_request]
 
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually
@@ -50,4 +50,6 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate ./.condaenv
-          pytest ./tests
+          pytest --cov=./ --cov-report=xml
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v3
