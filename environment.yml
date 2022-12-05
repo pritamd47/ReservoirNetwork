@@ -1,0 +1,18 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - codecov
+  - pytest
+  - landlab
+  - jupyterlab
+  - matplotlib
+  - numpy
+  - pandas
+  - geopandas
+  - xarray
+  - dask
+  - cartopy
+  - conda-build
+  - pytest-cov
