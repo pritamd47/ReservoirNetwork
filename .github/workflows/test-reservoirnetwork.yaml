@@ -33,7 +33,9 @@ jobs:
         run: |
           conda activate ./.condaenv
           conda develop src/
-          
+
       - name: Run tests
         shell: bash -l {0}
-        run: pytest ./tests
+        run: |
+          conda activate ./.condaenv
+          pytest ./tests
