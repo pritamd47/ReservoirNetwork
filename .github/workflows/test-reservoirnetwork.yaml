@@ -25,19 +25,15 @@ jobs:
             miniforge-version: latest
             activate-environment: my-env
             use-mamba: true
-      - name: Set cache date
-        run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
-
-      - uses: actions/cache@v2
-        with:
-          path: ${{ matrix.prefix }}
-          key: ${{ matrix.label }}-conda-${{ hashFiles('environment.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
-        id: cache
 
       - name: Update environment
         run: mamba env update --prefix ./.condaenv -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
-
+      - name: Add src to environment
+        run: |
+          conda activate ./.condaenv
+          conda develop src/
+          
       - name: Run tests
         shell: bash -l {0}
         run: pytest ./tests
