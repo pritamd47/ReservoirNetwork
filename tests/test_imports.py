@@ -1,2 +1,2 @@
 def test_imports():
-    from reservoirnetwork import network
+    from reservoirnetwork.network import ReservoirNetwork
