@@ -16,3 +16,5 @@ dependencies:
   - cartopy
   - conda-build
   - pytest-cov
+  - rasterio
+  - pygeos
