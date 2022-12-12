@@ -1,5 +1,6 @@
 .condaenv/
-
+extras/
+.DS_Store
 
 
 
