@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xml:lang="en"><Esri><CreaDate>20221212</CreaDate><CreaTime>10263700</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><DataProperties><lineage><Process ToolSource="c:\program files (x86)\arcgis\desktop10.8\ArcToolbox\Toolboxes\Conversion Tools.tbx\RasterToPolygon" Date="20221212" Time="102637">RasterToPolygon watershed "C:\Users\pdas47\Documents\ArcGIS\Projects\Reservoir Network\watershed_boundary.shp" NO_SIMPLIFY VALUE SINGLE_OUTER_PART #</Process></lineage></DataProperties></Esri></metadata>
