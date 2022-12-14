@@ -81,15 +81,15 @@ def test_reservoir_component():
     ):
         sr.run_one_step(t, inflow, storage_change)
         
-        reservoir__release.append(grid.at_node['reservoir__release'])
-        reservoir__unregulated_inflow.append(grid.at_node['reservoir__unregulated_inflow'])
-        reservoir__regulated_inflow.append(grid.at_node['reservoir__regulated_inflow'])
+        reservoir__release.append(grid.at_node['reservoir__release'].tolist())
+        reservoir__unregulated_inflow.append(grid.at_node['reservoir__unregulated_inflow'].tolist())
+        reservoir__regulated_inflow.append(grid.at_node['reservoir__regulated_inflow'].tolist())
 
     calculated_reservoir__release = [
-        [90, 127]
-        [100, 148]
-        [80, 104]
-        [60, 86]
+        [90, 127],
+        [100, 148],
+        [80, 104],
+        [60, 86],
         [30, 48]
     ]
     calculated_reservoir__unregulated_inflow = [
@@ -107,6 +107,8 @@ def test_reservoir_component():
         [0, 30]
     ]
 
+    print(reservoir__regulated_inflow)
+    
     assert calculated_reservoir__release == reservoir__release
     assert calculated_reservoir__unregulated_inflow == reservoir__unregulated_inflow
     assert calculated_reservoir__regulated_inflow == reservoir__regulated_inflow
