@@ -158,7 +158,7 @@ class StreamflowRegulation(Component):
                 self._grid.at_node['reservoir__release'][upstream_nodes], 
                 mask=upstream_links.mask
             ), axis=1
-        ).filled(-1)
+        ).filled(0)
 
         self._grid.at_node['reservoir__regulated_inflow'] = regulated_inflow
 
