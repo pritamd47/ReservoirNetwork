@@ -17,5 +17,5 @@ dependencies:
   - conda-build
   - pytest-cov
   - rasterio
-  - pygeos
+  - pygeos=0.10.2
   - contextily
