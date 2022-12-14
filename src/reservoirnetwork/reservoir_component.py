@@ -38,7 +38,7 @@ class StreamflowRegulation(Component):
             "units": "m3/d",
             "mapping": "node"
         },
-        "reservoir__outflow": {
+        "reservoir__release": {
             "dtype": float,
             "intent": "out",
             "optional": False,
@@ -69,7 +69,7 @@ class StreamflowRegulation(Component):
     }
 
     def __init__(
-        self, grid, fluxes
+        self, grid#, fluxes
     ):
         """_summary_
 
@@ -79,14 +79,16 @@ class StreamflowRegulation(Component):
         """
         super().__init__(grid)
 
+        # self._grid = grid
+
         self.initialize_output_fields()
         
-        self._fluxes = fluxes
+        # self._fluxes = fluxes
 
-        self._time = self._fluxes.latest_time
-        self._time_idx = self._fluxes.number_of_timesteps
+        self._time = 0
+        self._time_idx = 0
 
-        self._inflow = grid.at_node["reservoir__inflow"]
+        self._inflow = grid.at_node["reservoir__total_inflow"]
         self._abstract_elevation = grid.at_node["reservoir__abstract_elevation"]
         self._storage_change = grid.at_node["reservoir__storage_change"]
 
@@ -99,26 +101,29 @@ class StreamflowRegulation(Component):
     def _calc_outflow(self):
         """Calculates outflow using mass balance: O = I - ∆S
         """
-        self._outflow = self._inflow - self._storage_change
+        self._outflow = self._grid.at_node['reservoir__total_inflow'] - self._grid.at_node['reservoir__storage_change']
+        self._grid.at_node['reservoir__release'] = self._outflow
+        
+        return self._outflow
 
-    def _create_new_time(self):
-        """_summary_
-        """
-        if self._time_idx != 0:
-            self._fluxes.add_record(time=[self._time])
+    # def _create_new_time(self):
+    #     """_summary_
+    #     """
+    #     if self._time_idx != 0:
+    #         self._fluxes.add_record(time=[self._time])
             
-            self._fluxes.ffill_grid_element_and_id()
+    #         self._fluxes.ffill_grid_element_and_id()
 
-            # copy parcel attributes forward in time.
-            for at in self._time_variable_flux_attributes:
-                self._fluxes.dataset[at].values[
-                    :, self._time_idx
-                ] = self._fluxes.dataset[at].values[:, self._time_idx - 1]
+    #         # copy parcel attributes forward in time.
+    #         for at in self._time_variable_flux_attributes:
+    #             self._fluxes.dataset[at].values[
+    #                 :, self._time_idx
+    #             ] = self._fluxes.dataset[at].values[:, self._time_idx - 1]
 
-        self._this_timesteps_fluxes = np.zeros_like(
-            self._fluxes.dataset.element_id, dtype=bool
-        )
-        self._this_timesteps_fluxes[:, -1] = True
+    #     self._this_timesteps_fluxes = np.zeros_like(
+    #         self._fluxes.dataset.element_id, dtype=bool
+    #     )
+    #     self._this_timesteps_fluxes[:, -1] = True
 
 
     def _calc_regulated_inflow(self):
@@ -129,7 +134,6 @@ class StreamflowRegulation(Component):
         # increasing upstream
         fdr = FlowDirectorSteepest(self._grid, self._abstract_elevation)
         fdr.run_one_step()
-
 
         # find the links that contribute to each node
         upstream_contributing_links_at_node = np.where(
@@ -154,7 +158,7 @@ class StreamflowRegulation(Component):
                 self._grid.at_node['reservoir__release'][upstream_nodes], 
                 mask=upstream_links.mask
             ), axis=1
-        ).filled(0)
+        ).filled(-1)
 
         self._grid.at_node['reservoir__regulated_inflow'] = regulated_inflow
 
@@ -172,17 +176,21 @@ class StreamflowRegulation(Component):
         return unregulated_inflow
 
 
-    def run_one_step(self, time=None):
+    def run_one_step(self, time, inflow, storage_change):
         """_summary_
 
         Args:
             time (int, optional): _description_. Defaults to 1.
         """
+        self._grid.at_node["reservoir__total_inflow"] = inflow
+        self._grid.at_node["reservoir__storage_change"] = storage_change
+
         if time is not None:
             self._time = time
         else:
             self._time = self._time + pd.Timedelta(1, 'D')
         self._time_idx += 1
 
+        self._calc_outflow()
         self._calc_regulated_inflow()
         self._calc_unregulated_inflow()
