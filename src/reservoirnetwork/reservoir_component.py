@@ -65,6 +65,48 @@ class StreamflowRegulation(Component):
             "optional": False,
             "units": "m",
             "mapping": "node"
+        },
+        "river__storage": {
+            "dtype": float,
+            "intent": "in",
+            "optional": False,
+            "units": "m3",
+            "mapping": "link"
+        },
+        "river__hydraulic_radius": {
+            "dtype": float,
+            "intent": "in",
+            "optional": False,
+            "units": "m",
+            "mapping": "link"
+        },
+        "river__release_inflow": {
+            "dtype": float,
+            "intent": "out",
+            "optional": False,
+            "units": "m3/d",
+            "mapping": "link"
+        },
+        "river__slope": {
+            "dtype": float,
+            "intent": "in",
+            "optional": False,
+            "units": "m/m",
+            "mapping": "link"
+        },
+        "river__length": {
+            "dtype": float,
+            "intent": "in",
+            "optional": False,
+            "units": "m",
+            "mapping": "link"
+        },
+        "river__roughness": {
+            "dtype": float,
+            "intent": "in",
+            "optional": False,
+            "units": "-",
+            "mapping": "link"
         }
     }
 
@@ -175,12 +217,34 @@ class StreamflowRegulation(Component):
 
         return unregulated_inflow
 
+    def _calc_k(self):
+        return np.power(self._grid.at_link["river__hydraulic_radius"], 2/3) * np.sqrt(self._grid.at_link["river__slope"])/(self._grid.at_link["river__roughness"]*self._grid.at_link["river__length"])
+    
+    def _route_through_stream(self):
+        """Calculate inflow to river
+        """
+        Qin = np.sum(self.grid.at_node["reservoir__release"][self._grid.node_at_link_head])
+        self._grid.at_link["river__release_inflow"] = Qin
+        
+        V_t = self._grid.at_link["river__storage"]
+
+        k = self._calc_k()
+
+        V_t_1 = (Qin/k) + np.power(V_t - Qin/k, np.power(np.e, -k)) # ∆t = 1
+        self._grid.at_link["river__storage"] = V_t_1
+
+        # calculate outflow to next node
+        Qout = Qin - (V_t_1 - V_t)
+        self.grid.at_link["river__flow"] = Qout
+
+        return Qout
+
 
     def run_one_step(self, time, inflow, storage_change):
         """_summary_
 
         Args:
-            time (int, optional): _description_. Defaults to 1.
+            dt (int, optional): _description_. Defaults to 1.
         """
         self._grid.at_node["reservoir__total_inflow"] = inflow
         self._grid.at_node["reservoir__storage_change"] = storage_change
@@ -192,5 +256,6 @@ class StreamflowRegulation(Component):
         self._time_idx += 1
 
         self._calc_outflow()
-        self._calc_regulated_inflow()
-        self._calc_unregulated_inflow()
+        self._route_through_stream()
+        # self._calc_regulated_inflow()
+        # self._calc_unregulated_inflow()
