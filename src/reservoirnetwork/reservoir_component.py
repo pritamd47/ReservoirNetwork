@@ -182,24 +182,25 @@ class StreamflowRegulation(Component):
             fdr.flow_link_incoming_at_node() == 1, self._grid.links_at_node, -1
         )
 
-        # find upstream links
-        upstream_links = ma.MaskedArray(
-            upstream_contributing_links_at_node, 
-            mask=upstream_contributing_links_at_node==-1
-        )
-        # find upstream nodes
-        upstream_nodes = ma.MaskedArray(
-            fdr.upstream_node_at_link()[upstream_links], 
-            mask=upstream_links.mask
-        )
+        # # find upstream links
+        # upstream_links = ma.MaskedArray(
+        #     upstream_contributing_links_at_node, 
+        #     mask=upstream_contributing_links_at_node==-1
+        # )
+        # # find upstream nodes
+        # upstream_nodes = ma.MaskedArray(
+        #     fdr.upstream_node_at_link()[upstream_links], 
+        #     mask=upstream_links.mask
+        # )
         
         # calculate regulated inflow as the sum of release for now, later use links and link 
         # storage to calculate regulated inflow
+        self._grid.at_link['river__regulated_flow']
         regulated_inflow = ma.sum(
             ma.MaskedArray(
-                self._grid.at_node['reservoir__release'][upstream_nodes], 
-                mask=upstream_links.mask
-            ), axis=1
+                self._grid.at_link['river__regulated_flow'].reshape(-1, 1)[upstream_contributing_links_at_node],
+                mask = upstream_contributing_links_at_node == -1
+            ), axis=1 
         ).filled(0)
 
         self._grid.at_node['reservoir__regulated_inflow'] = regulated_inflow
@@ -230,12 +231,12 @@ class StreamflowRegulation(Component):
 
         k = self._calc_k()
 
-        V_t_1 = (Qin/k) + np.power(V_t - Qin/k, np.power(np.e, -k)) # ∆t = 1
+        V_t_1 = (Qin/k) + (V_t - Qin/k) * np.exp(-k) # ∆t = 1
         self._grid.at_link["river__storage"] = V_t_1
 
         # calculate outflow to next node
         Qout = Qin - (V_t_1 - V_t)
-        self.grid.at_link["river__flow"] = Qout
+        self.grid.at_link["river__regulated_flow"] = Qout
 
         return Qout
 
@@ -257,5 +258,5 @@ class StreamflowRegulation(Component):
 
         self._calc_outflow()
         self._route_through_stream()
-        # self._calc_regulated_inflow()
-        # self._calc_unregulated_inflow()
+        self._calc_regulated_inflow()
+        self._calc_unregulated_inflow()
