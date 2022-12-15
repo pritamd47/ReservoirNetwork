@@ -2,7 +2,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.8
   - codecov
   - pytest
   - landlab
@@ -10,12 +10,13 @@ dependencies:
   - matplotlib
   - numpy
   - pandas
-  - geopandas
+  - geopandas>=0.12
   - xarray
   - dask
   - cartopy
   - conda-build
   - pytest-cov
   - rasterio
-  - pygeos=0.10.2
+  - pygeos
   - contextily
+  - hypothesis
