@@ -4,6 +4,7 @@ import pandas as pd
 
 from landlab import Component, FieldError
 from landlab.components import FlowDirectorSteepest
+from landlab.grid.mappers import map_link_head_node_to_link
 
 class StreamflowRegulation(Component):
     """_brief_summary_
@@ -224,7 +225,8 @@ class StreamflowRegulation(Component):
     def _route_through_stream(self):
         """Calculate inflow to river
         """
-        Qin = np.sum(self.grid.at_node["reservoir__release"][self._grid.node_at_link_head])
+        # Qin = self._grid.at_node["reservoir__release"][self._grid.node_at_link_head])
+        Qin = map_link_head_node_to_link(self._grid, "reservoir__release")
         self._grid.at_link["river__release_inflow"] = Qin
         
         V_t = self._grid.at_link["river__storage"]
