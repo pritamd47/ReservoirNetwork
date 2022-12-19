@@ -241,6 +241,44 @@ class StreamflowRegulation(Component):
         self.grid.at_link["river__regulated_flow"] = Qout
 
         return Qout
+    
+    def _calc_upstream_storage_change(self):
+        """Calculate cumulative upstream storage change
+        """
+        # flow director needed for finding upstream nodes. Use the abstract_elevation field which
+        # can have any abstract value, with the end node having the lowest abstract_elevation, and
+        # increasing upstream
+        fdr = FlowDirectorSteepest(self._grid, self._abstract_elevation)
+        fdr.run_one_step()
+
+        # find the links that contribute to each node
+        upstream_contributing_links_at_node = np.where(
+            fdr.flow_link_incoming_at_node() == 1, self._grid.links_at_node, -1
+        )
+
+        # find upstream links
+        upstream_links = ma.MaskedArray(
+            upstream_contributing_links_at_node, 
+            mask=upstream_contributing_links_at_node==-1
+        )
+        # find upstream nodes
+        upstream_nodes = ma.MaskedArray(
+            fdr.upstream_node_at_link()[upstream_links], 
+            mask=upstream_links.mask
+        )
+        
+        # calculate regulated inflow as the sum of release for now, later use links and link 
+        # storage to calculate regulated inflow
+        upstream_storage_change = ma.sum(
+            ma.MaskedArray(
+                self._grid.at_node['reservoir__storage_change'].reshape(-1, 1)[upstream_nodes],
+                mask = upstream_nodes.mask
+            ), axis=1 
+        ).filled(0)
+
+        self._grid.at_node['reservoir__upstream_storage_change'] = upstream_storage_change
+
+        return upstream_storage_change
 
 
     def run_one_step(self, time, inflow, storage_change):
@@ -262,3 +300,4 @@ class StreamflowRegulation(Component):
         self._route_through_stream()
         self._calc_regulated_inflow()
         self._calc_unregulated_inflow()
+        self._calc_upstream_storage_change()
